@@ -89,6 +89,13 @@ export default function Home() {
   const [showScore, setShowScore] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
+  const [timePerQuestion, setTimePerQuestion] = useState<number[]>([]);
+  const [startTime, setStartTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Reset timer when question changes
+    setStartTime(Date.now());
+  }, [currentQuestion]);
 
   useEffect(() => {
     // Shuffle options when question changes
@@ -101,6 +108,11 @@ export default function Home() {
   }, [currentQuestion]);
 
   const handleAnswerClick = (answer: string) => {
+    if (startTime) {
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      setTimePerQuestion([...timePerQuestion, timeSpent]);
+    }
+
     setSelectedAnswer(answer);
     if (answer === BIRTHDAY_SCENES[currentQuestion].movie) {
       setScore(score + 1);
@@ -130,10 +142,14 @@ export default function Home() {
     setScore(0);
     setShowScore(false);
     setSelectedAnswer(null);
+    setTimePerQuestion([]);
   };
 
   if (showScore) {
     const percentage = Math.round((score / BIRTHDAY_SCENES.length) * 100);
+    const totalTime = timePerQuestion.reduce((a, b) => a + b, 0);
+    const averageTime = Math.round(totalTime / timePerQuestion.length);
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-pink-100 to-purple-100 p-4">
         <div className="text-center bg-white p-8 rounded-lg shadow-lg max-w-2xl w-full">
@@ -143,6 +159,14 @@ export default function Home() {
           <p className="text-2xl mb-4 text-gray-800">
             Tu puntuación: {score}/{BIRTHDAY_SCENES.length} ({percentage}%)
           </p>
+          <div className="mb-4">
+            <p className="text-xl text-gray-700">
+              Tiempo total: {totalTime} segundos
+            </p>
+            <p className="text-xl text-gray-700">
+              Promedio por pregunta: {averageTime} segundos
+            </p>
+          </div>
           <p className="text-xl mb-8 text-gray-700">
             {score === BIRTHDAY_SCENES.length
               ? "Cuando nos veamos te llevo el regalito"
@@ -168,9 +192,16 @@ export default function Home() {
         </h1>
 
         <div className="mb-6">
-          <p className="text-center text-gray-600 mb-4">
-            Pregunta {currentQuestion + 1} de {BIRTHDAY_SCENES.length}
-          </p>
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-gray-600">
+              Pregunta {currentQuestion + 1} de {BIRTHDAY_SCENES.length}
+            </p>
+            {startTime && (
+              <p className="text-gray-600">
+                Tiempo: {Math.floor((Date.now() - startTime) / 1000)}s
+              </p>
+            )}
+          </div>
 
           <div className="aspect-w-16 aspect-h-9 mb-6 relative">
             <iframe
